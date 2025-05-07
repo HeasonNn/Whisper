@@ -1,7 +1,6 @@
 #include <gflags/gflags.h>
 
-
-#include "commune/deviceConfig.hpp"
+#include "commune/whisper_detector.hpp"
 #include "common.hpp"
 
 
@@ -26,9 +25,9 @@ int main(int argc, char** argv) {
         FATAL_ERROR(e.what());
     }
     
-    const auto p_device_init = make_shared<Whisper::DeviceConfig>();
-    p_device_init->configure_via_json(config_j);
-    p_device_init->do_init();
+    const auto config_init_ptr = make_shared<Whisper::whisper_detector>();
+    config_init_ptr->configure_via_json(config_j);
+    config_init_ptr->run();
     
     __STOP_FTIMER__
     __PRINTF_EXE_TIME__

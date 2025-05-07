@@ -1,10 +1,11 @@
 #pragma once
 
 #include "../common.hpp"
-#include "dpdkCommon.hpp"
+#include "whisper_common.hpp"
+#include "packet_basic.hpp"
 #include "parserWorker.hpp"
 #include "kMeansLearner.hpp"
-
+#include "flow_define.hpp"
 
 #include <torch/torch.h>
 
@@ -12,8 +13,7 @@
 namespace Whisper
 {
 
-
-struct PacketMetaData;
+struct basic_packet;
 class ParserWorkerThread;
 class KMeansLearner;
 class DeviceConfig;
@@ -31,6 +31,8 @@ struct AnalyzerConfigParam final {
     // Number of train sampling
     size_t num_train_sample = 50;
 
+    double_t train_ratio = 0.75;
+
     // Save results to file
     bool save_to_file = false;
     // File path
@@ -46,8 +48,6 @@ struct AnalyzerConfigParam final {
     bool speed_verbose = false;
     bool ip_verbose = false;
     string verbose_ip_target = "";
-    cpu_core_id_t verbose_center_core = 10;
-
 
     auto inline display_params() const -> void {
         printf("[Whisper Analyzer Configuration]\n");
@@ -85,23 +85,19 @@ struct AnalyzerConfigParam final {
 };
 
 
-class AnalyzerWorkerThread final : public pcpp::DpdkWorkerThread {
 
-	friend class DeviceConfig;
+class AnalyzerWorkerThread final {
+
+	friend class whisper_detector;
 
 private:
-
-    // Indicator of stop
-    volatile bool m_stop = false;
-    // In training mode or testing mode
     bool m_is_train = true;
-    // Core Id assigned by DPDK
-    cpu_core_id_t m_core_id;
 
-    // Index of per-packet properties array copied form Analyzer
-    mutable size_t m_index = 0;
-    // pause time for waitting analyzer (us)
-    size_t pause_time = 50000;
+	shared_ptr<vector<shared_ptr<basic_packet>>> pkt_meta_ptr;
+    shared_ptr<vector<uint8_t>> pkt_label_ptr;
+
+    vector<shared_ptr<basic_packet>> raw_data_train;
+    vector<shared_ptr<basic_packet>> raw_data_test;
 
 	uint64_t analysis_pkt_len = 0;
 	uint64_t analysis_pkt_num = 0;
@@ -109,83 +105,44 @@ private:
 	uint64_t sum_analysis_pkt_len = 0;
 	double_t analysis_start_time, analysis_end_time;
 
-    // The buffer for fetched per-packet properties that are copied form ParserWorkers
-    #define MAX_META_PKT_ARR_SIZE (1 << 25)
-    size_t meta_pkt_arr_size = 2000000;
-	shared_ptr<PacketMetaData[]> meta_pkt_arr;
-
-// #define DETAIL_TIME_ANALYZE
-// #define __DETAIL_TIME_ANALYZE
-
-#ifdef DETAIL_TIME_ANALYZE
-    double_t sum_weight_time = 0;
-    double_t sum_dist_time = 0;
-    double_t sum_transform_time = 0;
-    double_t sum_aggregate_time = 0;
-#ifdef __DETAIL_TIME_ANALYZE
-    size_t analyze_entrance = 0;
-#endif
-#endif
-
     // The result of train, i.e. the clustring centers
     torch::Tensor centers;
-    // KMeans Learner
+
     shared_ptr<KMeansLearner> p_learner;
-    // The registed ParserWorkers
-    vector<shared_ptr<ParserWorkerThread> > p_parser;
-    // configuration
     shared_ptr<AnalyzerConfigParam> p_analyzer_config;
-    
-    // Result signature
+
     typedef struct {
-        uint32_t address;
-        double distence;
-        size_t packet_num;
-    } FlowRecord;
+        shared_ptr<tuple5_flow4> flow_info;
+        double_t distence;
+        int assigned_cluster;
+        bool is_malicious;
+    }  flow_record_t;
 
-    // Memory to save results
-    #define MAX_RES_BUF_SIZE (1 << 24)
-    size_t result_buffer_size = 500000;
-    size_t flow_record_size = 0;
-    shared_ptr<FlowRecord[]> flow_records;
+    shared_ptr<vector<shared_ptr<flow_record_t>>> flow4_records;
+    // shared_ptr<vector<shared_ptr<tuple5_flow6>>> flow6_records;
 
-    const size_t max_fetch = 1 << 17;
     const double_t max_cluster_dist = 1e12;
-    
-    // Copy per-packet properties form registed ParserWorkers
-    auto fetch_form_parser(const shared_ptr<ParserWorkerThread> pt) const -> size_t;
-    // Extract Frequency Domain Representation from per-packet properties
+
+    void start_train();
     void wave_analyze();
-    // Linear Tranformation of per-packet properties
-    auto static inline weight_transform(const PacketMetaData & info) -> double_t;
+    auto static inline weight_transform(const shared_ptr<Whisper::basic_packet> info) -> double_t;
 
 public:
 
-    AnalyzerWorkerThread(const vector<shared_ptr<ParserWorkerThread> > & _vp, 
-                         const shared_ptr<KMeansLearner> _pl) : p_parser(_vp), p_learner(_pl) {}
-
-    AnalyzerWorkerThread(const vector<shared_ptr<ParserWorkerThread> > & _vp, 
-                         const shared_ptr<KMeansLearner> _pl,
-                         const json & _j) : p_parser(_vp), p_learner(_pl) {
-                             configure_via_json(_j);
-                         }
+    AnalyzerWorkerThread(
+        const shared_ptr<vector<shared_ptr<basic_packet>>> _pkt_meta_ptr, 
+        const shared_ptr<vector<uint8_t>> _pkt_label_ptr,
+        const shared_ptr<KMeansLearner> _pl
+    ): pkt_meta_ptr(_pkt_meta_ptr), p_learner(_pl), pkt_label_ptr(_pkt_label_ptr) {}
 
     virtual ~AnalyzerWorkerThread() {}
     AnalyzerWorkerThread & operator=(const AnalyzerWorkerThread &) = delete;
     AnalyzerWorkerThread(const AnalyzerWorkerThread &) = delete;
 
-    virtual bool run(uint32_t coreId) override;
+    bool run();
 
-    virtual void stop() override;
-
-	virtual uint32_t getCoreId() const override {
-		return m_core_id;
-	}
-
-    // Config form json file
     auto configure_via_json(const json & jin) -> bool;
 
-    // Save result to json file
     auto save_res_json() const -> bool;
 
     auto get_overall_performance() const -> pair<double_t, double_t>;

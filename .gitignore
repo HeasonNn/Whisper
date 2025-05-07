@@ -3,3 +3,7 @@
 /analysis/figure
 /result
 /configuration
+/venv
+/dataset
+*.pcap
+*.png

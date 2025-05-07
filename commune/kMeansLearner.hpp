@@ -2,7 +2,6 @@
 
 #include "../common.hpp"
 #include "./analyzerWorker.hpp"
-#include "./deviceConfig.hpp"
 
 #include <mlpack/core.hpp>
 #include <mlpack/methods/kmeans/kmeans.hpp>
@@ -17,7 +16,7 @@ namespace Whisper {
 
 
 class AnalyzerWorkerThread;
-class DeviceConfig;
+class whisper_detector;
 
 
 struct LearnerConfigParam final {
@@ -58,7 +57,7 @@ struct LearnerConfigParam final {
 class KMeansLearner final {
 
     friend class AnalyzerWorkerThread;
-    friend class DeviceConfig;
+    friend class whisper_detector;
 
 private:
 
@@ -75,6 +74,7 @@ private:
     void inline release_semaphore_data() const {
         sem_post(&data_sema);
     }
+    
     // Mutual exclution for training process (only one AnalyeWorker can start the trainning)
     mutable sem_t learn_sema;
     void inline acquire_semaphore_learn() const {
