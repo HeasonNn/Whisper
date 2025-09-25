@@ -7,3 +7,6 @@
 /dataset
 *.pcap
 *.png
+env/libtorch
+env/pcapplusplus
+data

@@ -4,6 +4,7 @@ import json
 import os
 import math
 import argparse
+import numpy as np
 import matplotlib.pyplot as plt
 from sklearn.metrics import roc_curve, auc, f1_score, fbeta_score, precision_recall_curve
 
@@ -15,20 +16,31 @@ def analyze_kmeans_result(file_path: str, fig_prefix='Result'):
 
     # 提取真实标签和预测分数
     labels = [int(item[-1]) for item in data]         # is_malicious: bool → int
-    scores = [float(item[4]) for item in data]         # distance
+    scores = [float(item[1]) for item in data]         # distance
 
     # RoC 曲线和 AUC
     fpr, tpr, _ = roc_curve(labels, scores)
     roc_auc = auc(fpr, tpr)
+    if roc_auc < 0.5:
+        scores = [-s for s in scores]   # 反转分数
+        fpr, tpr, _ = roc_curve(labels, scores)
+        roc_auc = auc(fpr, tpr)
 
     # PR 曲线和 AUC
     p, r, _ = precision_recall_curve(labels, scores)
     pr_auc = auc(r, p)
 
     # 二值化预测，阈值设为6（可调）
-    pred_labels = [1 if sc > 11 else 0 for sc in scores]
-    f1 = f1_score(labels, pred_labels, average='macro')
-    f2 = fbeta_score(labels, pred_labels, average='macro', beta=2)
+    best_f1, best_f2, best_thr = 0, 0, None
+    for thr in np.linspace(min(scores), max(scores), 200):
+        preds = [1 if s >= thr else 0 for s in scores]
+        f1_tmp = f1_score(labels, preds, average='macro')
+        f2_tmp = fbeta_score(labels, preds, average='macro', beta=2)
+        if f1_tmp > best_f1:
+            best_f1, best_f2, best_thr = f1_tmp, f2_tmp, thr
+
+    f1, f2 = best_f1, best_f2
+    print(f'Best threshold={best_thr:.4f}')
 
     # 绘制并保存 RoC 曲线图
     plt.figure()

@@ -96,9 +96,6 @@ private:
 	shared_ptr<vector<shared_ptr<basic_packet>>> pkt_meta_ptr;
     shared_ptr<vector<uint8_t>> pkt_label_ptr;
 
-    vector<shared_ptr<basic_packet>> raw_data_train;
-    vector<shared_ptr<basic_packet>> raw_data_test;
-
 	uint64_t analysis_pkt_len = 0;
 	uint64_t analysis_pkt_num = 0;
 	uint64_t sum_analysis_pkt_num = 0;
@@ -112,7 +109,7 @@ private:
     shared_ptr<AnalyzerConfigParam> p_analyzer_config;
 
     typedef struct {
-        shared_ptr<tuple5_flow4> flow_info;
+        uint32_t addr;
         double_t distence;
         int assigned_cluster;
         bool is_malicious;
@@ -123,8 +120,7 @@ private:
 
     const double_t max_cluster_dist = 1e12;
 
-    void start_train();
-    void wave_analyze();
+    void wave_analyze(vector<size_t> data);
     auto static inline weight_transform(const shared_ptr<Whisper::basic_packet> info) -> double_t;
 
 public:

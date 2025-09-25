@@ -5,7 +5,7 @@
         "mean_win_test": 100,
         "num_train_sample": 50,
         
-        "train_ratio": 0.75,
+        "train_ratio": 0.05,
         "mode_verbose": true,
         "center_verbose": false,
         "init_verbose": true,
@@ -32,7 +32,7 @@
         "load_result_file": "../cache/20200101.json"
     },
     "Parser": {
-        "dataset_dir": "../dataset/cleaned_ackport.data",
-        "label_dir": "../dataset/cleaned_ackport.label"
+        "dataset_dir": "../data/ids2018_bot.data",
+        "label_dir": "../data/ids2018_bot.label"
     }
 }

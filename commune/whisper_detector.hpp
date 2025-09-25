@@ -27,25 +27,6 @@ struct DeviceConfigParam final {
 };
 
 
-struct ThreadStateManagement final {
-
-	bool stop = true;
-
-	vector<shared_ptr<ParserWorkerThread> > parser_worker_thread_vec;
-    vector<shared_ptr<AnalyzerWorkerThread> > analyzer_worker_thread_vec;
-
-	ThreadStateManagement() = default;
-    virtual ~ThreadStateManagement() {}
-    ThreadStateManagement & operator=(const ThreadStateManagement &) = default;
-    ThreadStateManagement(const ThreadStateManagement &) = default;
-
-    ThreadStateManagement(const decltype(parser_worker_thread_vec) & _p_vec,
-                          const decltype(analyzer_worker_thread_vec) & _a_vec): 
-                          parser_worker_thread_vec(_p_vec), analyzer_worker_thread_vec(_a_vec), stop(false) {}
-
-};
-
-
 class whisper_detector final {
     
 private:

@@ -144,19 +144,8 @@ bool ParserWorkerThread::parser_from_data()
 
 bool ParserWorkerThread::run() 
 {
-	if (parser_config_ptr == nullptr) {
-		FATAL_ERROR("NULL parser configuration parameters.");
-	}
-
 	pkt_meta_ptr = make_shared<vector<shared_ptr<basic_packet>>>();
-	if (pkt_meta_ptr == nullptr) {
-		FATAL_ERROR("Meta data array: bad allocation.");
-	}
-
 	pkt_label_ptr = std::make_shared<std::vector<uint8_t>>();
-	if (pkt_label_ptr == nullptr) {
-		FATAL_ERROR("Packet label array: bad allocation.");
-	}
 
 	// parser_from_pcap();
 	parser_from_data();
