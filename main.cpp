@@ -7,7 +7,7 @@
 using namespace std;
 
 
-DEFINE_string(config, "../configTemplate.json", "Configure Whisper via JSON file.");
+DEFINE_string(config, "../config/Brute_Force.json", "Configure Whisper via JSON file.");
 
 
 int main(int argc, char** argv) {

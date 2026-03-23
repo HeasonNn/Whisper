@@ -16,8 +16,17 @@ void whisper_detector::run() {
 	const auto& k_learner_ptr = make_shared<KMeansLearner>();
 	k_learner_ptr->configure_via_json(j_cfg_kmeans);
 	
-	const auto analyzer_ptr = make_shared<AnalyzerWorkerThread>(parser_ptr->pkt_meta_ptr, parser_ptr->pkt_label_ptr, k_learner_ptr);
+	const auto analyzer_ptr = make_shared<AnalyzerWorkerThread>(
+		parser_ptr->pkt_meta_ptr, parser_ptr->pkt_label_ptr, k_learner_ptr
+	);
 	analyzer_ptr->configure_via_json(j_cfg_analyzer);
+
+	size_t sample_size = parser_ptr->pkt_meta_ptr->size();
+	size_t train_sample_size = 
+		static_cast<size_t>(sample_size * analyzer_ptr->p_analyzer_config->train_ratio);
+
+	k_learner_ptr->p_learner_config->num_train_data = train_sample_size;
+
 	analyzer_ptr->run();
 }
 
@@ -29,32 +38,9 @@ auto whisper_detector::configure_via_json(const json & jin) -> bool {
 		p_configure_param = NULL;
 	}
 
-	try {
-		const auto _device_param = make_shared<DeviceConfigParam>();
-		if (_device_param == nullptr) {
-			WARN("device paramerter bad allocation");
-			throw bad_alloc();
-		}
-
-		if (jin.find("Analyzer") != jin.end()) {
-			j_cfg_analyzer = jin["Analyzer"];
-		} else {
-			WARN("Analyzer configuration not found, use default.");
-		}
-		if (jin.find("Learner") != jin.end()) {
-			j_cfg_kmeans = jin["Learner"];
-		} else {
-			WARN("Learner configuration not found, use default.");
-		}
-		if (jin.find("Parser") != jin.end()) {
-			j_cfg_parser = jin["Parser"];
-		} else {
-			WARN("Parser configuration not found, use default.");
-		}
-
-	} catch(exception & e) {
-		FATAL_ERROR(e.what());
-	}
+	j_cfg_analyzer = jin["Analyzer"];
+	j_cfg_kmeans = jin["Learner"];
+	j_cfg_parser = jin["Parser"];
 
 	return true;
 }

@@ -46,7 +46,7 @@ def f_action(label, loss):
 def analyze_action(tag: str, malicious_addr: List[str]) -> None:
 
     int_malicious_addr = []
-    traget_files = os.listdir(save_path + '/' + tag)
+    traget_files = os.listdir(save_path + tag)
 
     normal = []
     abnormal = []

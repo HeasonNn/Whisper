@@ -4,9 +4,9 @@ import json
 import os
 import math
 import argparse
-import numpy as np
-import matplotlib.pyplot as plt
-from sklearn.metrics import roc_curve, auc, f1_score, fbeta_score, precision_recall_curve
+import numpy as np # type: ignore
+import matplotlib.pyplot as plt # type: ignore
+from sklearn.metrics import roc_curve, auc, f1_score, precision_score, recall_score, precision_recall_curve  # type: ignore
 
 
 def analyze_kmeans_result(file_path: str, fig_prefix='Result'):
@@ -15,32 +15,30 @@ def analyze_kmeans_result(file_path: str, fig_prefix='Result'):
         data = json.load(f)['Results']
 
     # 提取真实标签和预测分数
-    labels = [int(item[-1]) for item in data]         # is_malicious: bool → int
-    scores = [float(item[1]) for item in data]         # distance
+    labels = [int(item[-1]) for item in data]  # is_malicious: bool → int
+    scores = [float(item[1]) for item in data]  # distance
 
     # RoC 曲线和 AUC
     fpr, tpr, _ = roc_curve(labels, scores)
     roc_auc = auc(fpr, tpr)
     if roc_auc < 0.5:
-        scores = [-s for s in scores]   # 反转分数
+        scores = [-s for s in scores]  # 反转分数
         fpr, tpr, _ = roc_curve(labels, scores)
         roc_auc = auc(fpr, tpr)
 
     # PR 曲线和 AUC
-    p, r, _ = precision_recall_curve(labels, scores)
-    pr_auc = auc(r, p)
+    precision_curve, recall_curve, _ = precision_recall_curve(labels, scores)
+    pr_auc = auc(recall_curve, precision_curve)
 
-    # 二值化预测，阈值设为6（可调）
-    best_f1, best_f2, best_thr = 0, 0, None
+    # 搜索使 F1(macro) 最大的阈值，同时记录对应 precision/recall(macro)
+    best_f1, best_pr, best_rec, best_thr = 0.0, 0.0, 0.0, None
     for thr in np.linspace(min(scores), max(scores), 200):
         preds = [1 if s >= thr else 0 for s in scores]
-        f1_tmp = f1_score(labels, preds, average='macro')
-        f2_tmp = fbeta_score(labels, preds, average='macro', beta=2)
+        f1_tmp  = f1_score(labels, preds, average='macro', zero_division=0)
+        pr_tmp  = precision_score(labels, preds, average='macro', zero_division=0)
+        rec_tmp = recall_score(labels, preds, average='macro', zero_division=0)
         if f1_tmp > best_f1:
-            best_f1, best_f2, best_thr = f1_tmp, f2_tmp, thr
-
-    f1, f2 = best_f1, best_f2
-    print(f'Best threshold={best_thr:.4f}')
+            best_f1, best_pr, best_rec, best_thr = f1_tmp, pr_tmp, rec_tmp, thr
 
     # 绘制并保存 RoC 曲线图
     plt.figure()
@@ -55,7 +53,7 @@ def analyze_kmeans_result(file_path: str, fig_prefix='Result'):
 
     # 绘制并保存 PR 曲线图
     plt.figure()
-    plt.plot(r, p, color='firebrick', lw=2, label=f'PR AUC = {pr_auc:.6f}')
+    plt.plot(recall_curve, precision_curve, color='firebrick', lw=2, label=f'PR AUC = {pr_auc:.6f}')
     plt.xlabel('Recall')
     plt.ylabel('Precision')
     plt.title('Precision-Recall Curve')
@@ -63,17 +61,8 @@ def analyze_kmeans_result(file_path: str, fig_prefix='Result'):
     plt.tight_layout()
     plt.savefig(f'{fig_prefix}_PRC.png')
 
-    # 计算 EER（Equal Error Rate）
-    eer = None
-    min_d = float('inf')
-    for f, t in zip(fpr, tpr):
-        d = abs((1 - t) - f)
-        if d < min_d:
-            min_d = d
-            eer = f
-
-    # 控制台输出主要指标
-    print(f'AUC_RoC={roc_auc:.6f}, EER={eer:.6f}, AUC_PRC={pr_auc:.6f}, F1={f1:.6f}, F2={f2:.6f}')
+    # 控制台输出（只保留四项：auc_roc, pr, rec, f1）—— pr/rec 为在最佳 F1 阈值下的宏平均
+    print(f'auc_roc={roc_auc:.6f}, pr={best_pr:.6f}, rec={best_rec:.6f}, f1={best_f1:.6f}')
 
 
 if __name__ == '__main__':

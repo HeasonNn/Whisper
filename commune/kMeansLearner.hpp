@@ -273,52 +273,28 @@ public:
         if (p_learner_config != nullptr) {
             WARN("Learner configuration overleap.");
         }
+        
         p_learner_config = make_shared<LearnerConfigParam>();
-        if (p_learner_config == nullptr) {
-            WARNF("learner configuration: bad allocation.");
-            return false;
-        }
 
-        try {
-            if (jin.count("val_K")) {
-                p_learner_config->val_K = 
-                    static_cast<decltype(p_learner_config->val_K)>(jin["val_K"]);
-            }
-    
-            if (jin.count("num_train_data")) {
-                p_learner_config->num_train_data = 
-                    static_cast<decltype(p_learner_config->num_train_data)>(jin["num_train_data"]);
-            }
+        p_learner_config->val_K = static_cast<decltype(p_learner_config->val_K)>(jin["val_K"]);
 
-            if (jin.count("save_result")) {
-                p_learner_config->save_result = 
-                    static_cast<decltype(p_learner_config->save_result)>(jin["save_result"]);
-                if (jin.count("save_result_file")) {
-                    p_learner_config->save_result_file = 
-                        static_cast<decltype(p_learner_config->save_result_file)>(jin["save_result_file"]);
-                }
-            }
-            if (jin.count("load_result")) {
-                p_learner_config->load_result = 
-                    static_cast<decltype(p_learner_config->load_result)>(jin["load_result"]);
-                if (jin.count("load_result_file")) {
-                    p_learner_config->load_result_file = 
-                        static_cast<decltype(p_learner_config->load_result_file)>(jin["load_result_file"]);
-                }
-            }
+        p_learner_config->num_train_data = 
+            static_cast<decltype(p_learner_config->num_train_data)>(jin["num_train_data"]);
 
-            if (jin.count("verbose")) {
-                p_learner_config->verbose = 
-                    static_cast<decltype(p_learner_config->verbose)>(jin["verbose"]);
-            }
+        p_learner_config->save_result = 
+            static_cast<decltype(p_learner_config->save_result)>(jin["save_result"]);
 
-            if (p_learner_config->load_result && p_learner_config->save_result) {
-                throw logic_error("Can not save tarining result while load the result.");
-            }
-        } catch (exception & e) {
-            WARN(e.what());
-            return false;
-        }
+        p_learner_config->save_result_file = 
+            static_cast<decltype(p_learner_config->save_result_file)>(jin["save_result_file"]);
+
+        p_learner_config->load_result = 
+            static_cast<decltype(p_learner_config->load_result)>(jin["load_result"]);
+
+        p_learner_config->load_result_file = 
+            static_cast<decltype(p_learner_config->load_result_file)>(jin["load_result_file"]);
+
+        p_learner_config->verbose = 
+            static_cast<decltype(p_learner_config->verbose)>(jin["verbose"]);
 
         return true;
     }

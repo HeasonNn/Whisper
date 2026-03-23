@@ -4,17 +4,6 @@
 
 using namespace Whisper;
 
-using flow_hash_4_t = tuple5_conn4;
-using flow_H_table_entry_4_t = shared_ptr<tuple5_flow4>;
-using flow_H_table_4_t = unordered_map<flow_hash_4_t, flow_H_table_entry_4_t, boost::hash<flow_hash_4_t>> ;
-
-using flow_hash_6_t = tuple5_conn6;
-using flow_H_table_entry_6_t = shared_ptr<tuple5_flow6>;
-using flow_H_table_6_t = unordered_map<flow_hash_6_t, flow_H_table_entry_6_t, boost::hash<flow_hash_6_t>>;
-
-#define EPS 1e-9
-#define HUG 1e10
-
 
 static inline auto __get_double_ts() -> double_t {
     struct timeval ts;
@@ -306,7 +295,7 @@ auto AnalyzerWorkerThread::save_res_json() const -> bool
     ostringstream oss;
     oss << p_analyzer_config->save_dir 
         << p_analyzer_config->save_file_prefix 
-        << time_buf
+        // << time_buf
         << ".json";
     string file_name = oss.str();
 
