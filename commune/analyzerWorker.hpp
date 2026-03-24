@@ -113,6 +113,7 @@ private:
         double_t distence;
         int assigned_cluster;
         bool is_malicious;
+        vector<size_t> pkt_indices;  // Global packet indices for this flow
     }  flow_record_t;
 
     shared_ptr<vector<shared_ptr<flow_record_t>>> flow4_records;
@@ -147,4 +148,3 @@ public:
 
 
 }
-

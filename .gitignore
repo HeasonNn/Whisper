@@ -1,14 +1,28 @@
-/.vscode
-/build
-/analysis/figure
-/result
-/configuration
-/venv
-/dataset
-*.pcap
-*.png
-env/libtorch
+# Build
+build/
+
+# Dependencies
+libtorch/
 env/pcapplusplus
-data
-analysis/log
-config
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+
+# Results (keep structure, ignore content)
+results/*/
+!results/_summary/
+
+# Config (generated)
+config/*/
+
+# Logs
+logs/
+*.log
+results
+
+# IDE
+.vscode/
+.idea/
+*.swp

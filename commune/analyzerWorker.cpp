@@ -210,6 +210,7 @@ void AnalyzerWorkerThread::wave_analyze(vector<size_t> data){
             }
     
             if (p_analyzer_config->save_to_file) {
+                // Convert local indices to global indices
                 vector<size_t> rid_vec;
                 rid_vec.reserve(_ve.size());
                 for(auto id : _ve) rid_vec.emplace_back(data[id]);
@@ -222,7 +223,8 @@ void AnalyzerWorkerThread::wave_analyze(vector<size_t> data){
                     .addr = iter_mp->first,
                     .distence = min_dist, 
                     .assigned_cluster = assigned_cluster, 
-                    .is_malicious = is_malicious
+                    .is_malicious = is_malicious,
+                    .pkt_indices = rid_vec  // Save global packet indices
                 };
 
                 auto buf_loc_ptr = make_shared<flow_record_t>(buf_loc);
@@ -308,6 +310,12 @@ auto AnalyzerWorkerThread::save_res_json() const -> bool
         _j.push_back(cur_flow_record->distence);
         _j.push_back(cur_flow_record->assigned_cluster);
         _j.push_back(cur_flow_record->is_malicious);
+        // Add packet indices for packet-level evaluation
+        json idx_array;
+        for(auto idx : cur_flow_record->pkt_indices) {
+            idx_array.push_back(idx);
+        }
+        _j.push_back(idx_array);
         j_array.push_back(_j);
     }
 
